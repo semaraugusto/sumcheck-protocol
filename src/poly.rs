@@ -1,9 +1,14 @@
 use ark_bls12_381::Fr as ScalarField;
-use ark_poly::polynomial::multivariate::{SparsePolynomial, SparseTerm};
+use ark_ff::Field;
+use ark_poly::polynomial::multivariate::{SparsePolynomial, SparseTerm, Term};
+use ark_poly::polynomial::univariate::SparsePolynomial as UniSparsePolynomial;
 use ark_poly::polynomial::{MVPolynomial, Polynomial};
+use ark_std::{cfg_into_iter, One, Zero};
 use itertools::Itertools;
+use rand::Rng;
 
 pub type MultiLinearPolynomial = SparsePolynomial<ScalarField, SparseTerm>;
+pub type UniPoly = UniSparsePolynomial<ScalarField>;
 
 pub fn n_to_vec(i: usize, n: usize) -> Vec<ScalarField> {
     let result = format!("{:0>width$}", format!("{:b}", i), width = n)
@@ -16,25 +21,33 @@ pub fn n_to_vec(i: usize, n: usize) -> Vec<ScalarField> {
 pub trait SumEvaluation {
     fn slow_sum_poly(&self) -> ScalarField;
     fn slow_sum_g(&self) -> ScalarField;
+    // fn evaluate_gj(&self, points: Vec<ScalarField>) -> UniPoly;
+    // fn evaluate_gj_new(&self, points: Vec<ScalarField>) -> UniPoly;
+    // fn partial_eval(&mut self, vals: Option<&[ScalarField]>) -> UniPoly;
+    // fn gen_uni_polynomial_new(&mut self) -> UniPoly;
+    // fn gen_uni_polynomial_new(&mut self, inputs: &[Option<ScalarField>]) -> UniPoly;
+    // fn gen_uni_polynomial(&mut self) -> UniPoly;
+    // fn evaluate_term(
+    //     &self,
+    //     term: &SparseTerm,
+    //     point: &Vec<ScalarField>,
+    //     r_vec: Vec<ScalarField>,
+    // ) -> (ScalarField, Option<SparseTerm>);
+    // fn evaluate_term_new(
+    //     &self,
+    //     term: &SparseTerm,
+    //     point: &Vec<ScalarField>,
+    //     r_vec: Vec<ScalarField>,
+    // ) -> (ScalarField, Option<SparseTerm>);
 }
 
 impl SumEvaluation for MultiLinearPolynomial {
     fn slow_sum_poly(&self) -> ScalarField {
-        let v = self.num_vars();
-        let n = 2u32.pow(v as u32);
-        println!("n: {:?} -> v: {:?}", n, v);
-        let test: ScalarField = (0..v)
-            .map(|_| [false, true])
+        (0..self.num_vars)
+            .map(|_| [ScalarField::zero(), ScalarField::one()])
             .multi_cartesian_product()
-            .fold(0u8.into(), |acc, w| {
-                let w: Vec<ScalarField> = w.iter().map(|w_i| (*w_i).into()).collect();
-                let result = self.evaluate(&w);
-                acc + result
-            });
-
-        println!("FINAL_RES: {:?}", test);
-        test
-        // 1u32.into()
+            .map(|x| self.evaluate(&x))
+            .fold(ScalarField::zero(), |acc, i| acc + i)
     }
     fn slow_sum_g(&self) -> ScalarField {
         let v = self.num_vars();
@@ -92,16 +105,45 @@ mod tests {
     }
 
     #[rstest]
-    #[case(&G_0, &G_0_SUM1, &G_0_SUM2)]
-    #[case(&G_1, &G_1_SUM1, &G_1_SUM2)]
-    fn test_poly_sum(
-        #[case] p: &MultiLinearPolynomial,
-        #[case] c1: &ScalarField,
-        #[case] c2: &ScalarField,
-    ) {
-        println!("P: {:?}", p);
+    #[case(&G_0_SUM1, &G_0_SUM2)]
+    #[case(&G_1_SUM1, &G_1_SUM2)]
+    fn test_poly_sum(#[case] c1: &ScalarField, #[case] c2: &ScalarField) {
         println!("c1: {:?}", c1);
         println!("c2: {:?}", c2);
         assert_eq!(c1, c2);
     }
+    // #[rstest]
+    // #[case(&G_0, &G_0_SUM1, &G_0_SUM2)]
+    // #[case(&G_1, &G_1_SUM1, &G_1_SUM2)]
+    // fn test_univariate_poly(
+    //     #[case] p: &MultiLinearPolynomial,
+    //     #[case] c1: &ScalarField,
+    //     #[case] c2: &ScalarField,
+    // ) {
+    //     assert_eq!(c1, c2);
+    //     let mut p = p.clone();
+    //     let uni_poly = p.gen_uni_polynomial();
+    //     let r0 = uni_poly.evaluate(&0u32.into());
+    //     let r1 = uni_poly.evaluate(&1u32.into());
+    //     assert_eq!(r0 + r1, *c1);
+    // }
+    //
+    // #[rstest]
+    // #[case(&G_0, &G_0_SUM1, &G_0_SUM2)]
+    // #[case(&G_1, &G_1_SUM1, &G_1_SUM2)]
+    // fn test_univariate_poly_new(
+    //     #[case] p: &MultiLinearPolynomial,
+    //     #[case] c1: &ScalarField,
+    //     #[case] c2: &ScalarField,
+    // ) {
+    //     assert_eq!(c1, c2);
+    //     let mut p = p.clone();
+    //     let uni_poly = p.gen_uni_polynomial_new(&vec![]);
+    //     let uni_poly_old = p.gen_uni_polynomial();
+    //     println!("uni_poly: {:?}", uni_poly);
+    //     println!("uni_poly_old: {:?}", uni_poly_old);
+    //     let r0 = uni_poly.evaluate(&0u32.into());
+    //     let r1 = uni_poly.evaluate(&1u32.into());
+    //     assert_eq!(r0 + r1, *c1);
+    // }
 }
