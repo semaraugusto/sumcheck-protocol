@@ -18,7 +18,7 @@ impl Prover {
         self.poly.gen_uni_polynomial(&[None])
     }
 
-    pub fn gen_uni_polynomial(&mut self, r: ScalarField) -> UniPoly {
+    pub fn gen_round_polynomial(&mut self, r: ScalarField) -> UniPoly {
         self.r_vec.push(r);
         let mut inputs: Vec<Option<ScalarField>> = self.r_vec.iter().map(|&x| Some(x)).collect();
         inputs.push(None);
@@ -54,7 +54,6 @@ mod tests {
             ],
         );
         static ref G_0_SUM1: ScalarField = G_0.slow_sum_poly();
-        static ref G_0_SUM2: ScalarField = G_0.slow_sum_g();
         // Test with a larger g
         static ref G_1: MLP = MLP::from_coefficients_vec(
             4,
@@ -66,18 +65,12 @@ mod tests {
             ],
         );
         static ref G_1_SUM1: ScalarField = G_1.slow_sum_poly();
-        static ref G_1_SUM2: ScalarField = G_1.slow_sum_g();
     }
 
     #[rstest]
-    #[case(&G_0, &G_0_SUM1, &G_0_SUM2)]
-    #[case(&G_1, &G_1_SUM1, &G_1_SUM2)]
-    fn test_first_round_prover(
-        #[case] p: &MLP,
-        #[case] c1: &ScalarField,
-        #[case] c2: &ScalarField,
-    ) {
-        assert_eq!(c1, c2);
+    #[case(&G_0, &G_0_SUM1)]
+    #[case(&G_1, &G_1_SUM1)]
+    fn test_first_round_prover(#[case] p: &MLP, #[case] c1: &ScalarField) {
         let p = p.clone();
         let mut prover = Prover::new(&p.clone());
         let s1 = prover.first_round();

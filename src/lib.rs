@@ -58,7 +58,7 @@ mod tests {
         let mut rand = thread_rng();
         let r: ScalarField = rand.gen();
         let _ = prover.first_round();
-        let s2 = prover.gen_uni_polynomial(r);
+        let s2 = prover.gen_round_polynomial(r);
         let _ = Verifier::new(p.clone(), &s2, *c1);
     }
     #[rstest]
@@ -71,7 +71,7 @@ mod tests {
         // let s1 = prover.gen_uni_polynomial();
         let mut verifier = Verifier::new(p.clone(), &s1, *c1);
         let r = verifier.gen_r();
-        let gi = prover.gen_uni_polynomial(r);
+        let gi = prover.gen_round_polynomial(r);
         let status = verifier.execute_round(&gi);
         assert_eq!(status, Status::Verifying);
     }
@@ -87,7 +87,7 @@ mod tests {
         let mut status = Status::Verifying;
         while status == Status::Verifying {
             let r = verifier.gen_r();
-            let gi = prover.gen_uni_polynomial(r);
+            let gi = prover.gen_round_polynomial(r);
             status = verifier.execute_round(&gi);
         }
         assert_eq!(status, Status::Verified);

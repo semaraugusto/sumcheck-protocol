@@ -23,7 +23,7 @@ fn main() {
     let mut status = Status::Verifying;
     while status == Status::Verifying {
         let r = verifier.gen_r();
-        let gi = prover.gen_uni_polynomial(r);
+        let gi = prover.gen_round_polynomial(r);
         status = verifier.execute_round(&gi);
     }
     assert_eq!(status, Status::Verified);
