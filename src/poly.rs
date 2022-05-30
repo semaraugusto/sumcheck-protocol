@@ -1,11 +1,11 @@
 use ark_bls12_381::Fr as ScalarField;
-use ark_ff::Field;
-use ark_poly::polynomial::multivariate::{SparsePolynomial, SparseTerm, Term};
+// use ark_ff::Field;
+use ark_poly::polynomial::multivariate::{SparsePolynomial, SparseTerm};
 use ark_poly::polynomial::univariate::SparsePolynomial as UniSparsePolynomial;
 use ark_poly::polynomial::{MVPolynomial, Polynomial};
-use ark_std::{cfg_into_iter, One, Zero};
+use ark_std::{One, Zero};
+// use ark_std::{cfg_into_iter, One, Zero};
 use itertools::Itertools;
-use rand::Rng;
 
 pub type MultiLinearPolynomial = SparsePolynomial<ScalarField, SparseTerm>;
 pub type UniPoly = UniSparsePolynomial<ScalarField>;

@@ -1,19 +1,19 @@
 #![allow(dead_code)]
 use crate::oracle::{Oracle, UPoly};
-use crate::poly::MultiLinearPolynomial;
+// use crate::poly::MultiLinearPolynomial;
 use ark_bls12_381::Fr as ScalarField;
-use ark_poly::{Polynomial, UVPolynomial};
+use ark_poly::Polynomial;
 use ark_std::{One, Zero};
 use rand::rngs::ThreadRng;
 use rand::{thread_rng, Rng};
 
 #[derive(Debug)]
-struct Verifier {
-    rand: ThreadRng,
-    rnd_poly: Vec<Vec<ScalarField>>,
-    oracle: Oracle,
-    gi: UPoly<ScalarField>,
-    h: ScalarField,
+pub struct Verifier {
+    pub rand: ThreadRng,
+    pub rnd_poly: Vec<Vec<ScalarField>>,
+    pub oracle: Oracle,
+    pub gi: UPoly<ScalarField>,
+    pub h: ScalarField,
 }
 
 #[derive(PartialEq)]

@@ -72,7 +72,7 @@ mod tests {
     #[rstest]
     #[case(&G_0, &G_0_SUM1, &G_0_SUM2)]
     #[case(&G_1, &G_1_SUM1, &G_1_SUM2)]
-    fn test_first_round(
+    fn test_first_round_prover(
         #[case] p: &MultiLinearPolynomial,
         #[case] c1: &ScalarField,
         #[case] c2: &ScalarField,

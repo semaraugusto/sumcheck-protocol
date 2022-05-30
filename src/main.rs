@@ -10,10 +10,10 @@ use ark_poly::polynomial::multivariate::{SparsePolynomial, SparseTerm};
 pub use ark_poly::polynomial::univariate::DensePolynomial as UPoly;
 use ark_poly::MVPolynomial;
 use ark_poly::Polynomial;
-use ark_poly::UVPolynomial;
+// use ark_poly::UVPolynomial;
 // use itertools::Itertools;
 use oracle::Oracle;
-use poly::{MultiLinearPolynomial, SumEvaluation, UniPoly};
+use poly::{MultiLinearPolynomial, SumEvaluation};
 use prover::Prover;
 // is tn alive
 // Checking if tn is working
