@@ -22,10 +22,10 @@ impl Prover {
         self.r_vec.push(r);
         let mut inputs: Vec<Option<ScalarField>> = self.r_vec.iter().map(|&x| Some(x)).collect();
         inputs.push(None);
-        if inputs.len() == self.poly.num_vars {
-            self.poly.partial_eval(&inputs)
-        } else {
-            self.poly.gen_uni_polynomial(&inputs)
+        let max_rounds = self.poly.num_vars;
+        match inputs.len() {
+            i if i == max_rounds => self.poly.partial_eval(&inputs),
+            _ => self.poly.gen_uni_polynomial(&inputs),
         }
     }
 }

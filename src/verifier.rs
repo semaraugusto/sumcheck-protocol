@@ -46,28 +46,32 @@ impl Verifier {
         self.prev_gi = prev_gi.clone();
 
         let round = self.r_vec.len();
-
+        let max_rounds = self.poly.num_vars - 1;
         // Check if this is the last round
-        if round == self.poly.num_vars - 1 {
-            let r = self.gen_r();
-            let poly = UniPoly::from_coefficients_slice(s);
-            let expected = poly.evaluate(&r);
+        match round {
+            _r if _r == max_rounds => {
+                let r = self.gen_r();
+                let poly = UniPoly::from_coefficients_slice(s);
+                let eval = poly.evaluate(&r);
 
-            let full_eval = self.poly.evaluate(&self.r_vec);
+                let full_eval = self.poly.evaluate(&self.r_vec);
 
-            assert_eq!(full_eval, expected);
+                assert_eq!(full_eval, eval);
+                Status::Verified
+            }
+            _ => {
+                let r_prev = self.r_vec.last().unwrap();
 
-            Status::Verified
-        } else {
-            let r_prev = self.r_vec.last().unwrap();
-            let eval = UniPoly::from_coefficients_slice(&prev_gi).evaluate(r_prev);
-            let poly = UniPoly::from_coefficients_slice(s);
+                let prev_gi = UniPoly::from_coefficients_slice(&prev_gi);
+                let eval = prev_gi.evaluate(r_prev);
 
-            let expected = poly.evaluate(&ScalarField::one()) + poly.evaluate(&ScalarField::zero());
+                let poly = UniPoly::from_coefficients_slice(s);
+                let expected =
+                    poly.evaluate(&ScalarField::one()) + poly.evaluate(&ScalarField::zero());
 
-            assert_eq!(eval, expected);
-
-            Status::Verifying
+                assert_eq!(eval, expected);
+                Status::Verifying
+            }
         }
     }
 }
