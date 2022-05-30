@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 use crate::poly::MultiLinearPolynomial as MLP;
 use ark_bls12_381::Fr as ScalarField;
 use ark_poly::polynomial::univariate::DensePolynomial as UPoly;
@@ -45,7 +44,7 @@ impl Verifier {
         let round = self.r_vec.len();
 
         // Determine if this is the last round
-        if self.poly.num_vars - 1 == round {
+        if round == self.poly.num_vars - 1 {
             let r = self.gen_r();
             let poly = UPoly::from_coefficients_slice(s);
             assert!(poly.evaluate(&r) == self.poly.evaluate(&self.r_vec));

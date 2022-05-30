@@ -1,81 +1,33 @@
-#![allow(dead_code)]
+use crate::poly::{MultiLinearPolynomial as MLP, PolyEvaluation, UniPoly};
 use ark_bls12_381::Fr as ScalarField;
-use ark_ff::Field;
-use ark_poly::polynomial::multivariate::{SparsePolynomial as MPoly, SparseTerm};
-use ark_poly::polynomial::univariate::DensePolynomial as UPoly;
-// use ark_poly::Polynomial;
-use crate::poly::{MultiLinearPolynomial as MLP, SumEvaluation};
-use ark_poly::UVPolynomial;
-use ark_std::{One, Zero};
-use itertools::Itertools;
 
 #[derive(Debug, Clone)]
 pub struct Prover {
-    pub g: MPoly<ScalarField, SparseTerm>,
+    pub poly: MLP,
     pub r_vec: Vec<ScalarField>,
 }
 
 impl Prover {
-    pub fn new(g: &MLP) -> Self {
+    pub fn new(poly: &MLP) -> Self {
         Self {
-            g: g.clone(),
+            poly: poly.clone(),
             r_vec: vec![],
         }
     }
-    pub fn first_round(&mut self) -> UPoly<ScalarField> {
-        // self.r_vec.push();
-        gen_uni_polynomial(&self.g, &[None])
+    pub fn first_round(&mut self) -> UniPoly {
+        self.poly.gen_uni_polynomial(&[None])
     }
 
-    pub fn gen_uni_polynomial(&mut self, r: ScalarField) -> UPoly<ScalarField> {
+    pub fn gen_uni_polynomial(&mut self, r: ScalarField) -> UniPoly {
         self.r_vec.push(r);
         let mut inputs: Vec<Option<ScalarField>> = self.r_vec.iter().map(|&x| Some(x)).collect();
         inputs.push(None);
-        if inputs.len() == self.g.num_vars {
-            partial_eval(&self.g, &inputs)
+        if inputs.len() == self.poly.num_vars {
+            self.poly.partial_eval(&inputs)
         } else {
-            gen_uni_polynomial(&self.g, &inputs)
+            self.poly.gen_uni_polynomial(&inputs)
         }
     }
-}
-
-// Taken from https://github.com/timgestson/thaler-study-group/blob/main/src/sumcheck/prover.rs
-// Take variable values via Some(Fr) and solve return a Univariate Polynomial for the None variable
-// i.e. [None, Some(2), Some(3)] will return a Poly in respect to x1 with x2 solved for 2 and x3 solved for 3
-fn partial_eval(
-    g: &MPoly<ScalarField, SparseTerm>,
-    vals: &[Option<ScalarField>],
-) -> UPoly<ScalarField> {
-    g.terms
-        .iter()
-        .map(|(coef, term)| {
-            let (coef, degree) =
-                term.iter()
-                    .fold((*coef, 0), |acc, (var, degree)| match vals[*var] {
-                        Some(val) => (val.pow([(*degree) as u64]) * acc.0, acc.1),
-                        None => (acc.0, *degree),
-                    });
-            let mut vec = vec![ScalarField::zero(); degree + 1];
-            vec[degree] = coef;
-            UPoly::from_coefficients_slice(&vec)
-        })
-        .fold(UPoly::zero(), |acc, poly| acc + poly)
-}
-
-fn gen_uni_polynomial(
-    g: &MPoly<ScalarField, SparseTerm>,
-    inputs: &[Option<ScalarField>],
-) -> UPoly<ScalarField> {
-    (0..g.num_vars - inputs.len())
-        .map(|_| [ScalarField::zero(), ScalarField::one()])
-        .multi_cartesian_product()
-        .map(|x| {
-            x.iter().fold(inputs.to_vec(), |mut acc, &var| {
-                acc.push(Some(var));
-                acc
-            })
-        })
-        .fold(UPoly::zero(), |acc, vals| acc + partial_eval(g, &vals))
 }
 
 #[cfg(test)]
@@ -83,17 +35,17 @@ mod tests {
     use lazy_static::lazy_static;
 
     use super::*;
-    use crate::poly::{MultiLinearPolynomial, SumEvaluation};
+    use crate::poly::{MultiLinearPolynomial as MLP, PolyEvaluation};
     use ark_bls12_381::Fr as ScalarField;
-    use ark_poly::polynomial::multivariate::SparsePolynomial as MPoly;
     use ark_poly::polynomial::multivariate::{SparseTerm, Term};
     use ark_poly::polynomial::MVPolynomial;
     use ark_poly::Polynomial;
+    use ark_std::{One, Zero};
     use rstest::rstest;
 
     lazy_static! {
         // g = 2(x_1)^3 + (x_1)(x_3) + (x_2)(x_3)
-        static ref G_0: MultiLinearPolynomial = MPoly::from_coefficients_vec(
+        static ref G_0: MLP = MLP::from_coefficients_vec(
             3,
             vec![
                 (2u32.into(), SparseTerm::new(vec![(0, 3)])),
@@ -104,7 +56,7 @@ mod tests {
         static ref G_0_SUM1: ScalarField = G_0.slow_sum_poly();
         static ref G_0_SUM2: ScalarField = G_0.slow_sum_g();
         // Test with a larger g
-        static ref G_1: MultiLinearPolynomial = MPoly::from_coefficients_vec(
+        static ref G_1: MLP = MLP::from_coefficients_vec(
             4,
             vec![
                 (2u32.into(), SparseTerm::new(vec![(0, 3)])),
@@ -121,7 +73,7 @@ mod tests {
     #[case(&G_0, &G_0_SUM1, &G_0_SUM2)]
     #[case(&G_1, &G_1_SUM1, &G_1_SUM2)]
     fn test_first_round_prover(
-        #[case] p: &MultiLinearPolynomial,
+        #[case] p: &MLP,
         #[case] c1: &ScalarField,
         #[case] c2: &ScalarField,
     ) {
@@ -129,9 +81,7 @@ mod tests {
         let p = p.clone();
         let mut prover = Prover::new(&p.clone());
         let s1 = prover.first_round();
-        let expected_c = s1.evaluate(&0u32.into()) + s1.evaluate(&1u32.into());
-        // println!("expected_c: {:?}", expected_c);
-        // println!("g0_sum: {:?}", c1);
+        let expected_c = s1.evaluate(&ScalarField::zero()) + s1.evaluate(&ScalarField::one());
         assert_eq!(expected_c, *c1);
     }
 }

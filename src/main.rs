@@ -1,23 +1,14 @@
 pub mod poly;
 pub mod prover;
 pub mod verifier;
-// use ark_ff::Zero;
-// use ark_ff::{Field, One};
-// use ark_poly::polynomial::multivariate::SparsePolynomial as MPoly;
-use ark_poly::polynomial::multivariate::Term;
-use ark_poly::polynomial::multivariate::{SparsePolynomial, SparseTerm};
-pub use ark_poly::polynomial::univariate::DensePolynomial as UPoly;
+use ark_poly::polynomial::multivariate::{SparseTerm, Term};
 use ark_poly::MVPolynomial;
-use ark_poly::Polynomial;
-// use ark_poly::UVPolynomial;
-// use itertools::Itertools;
-use poly::{MultiLinearPolynomial, SumEvaluation};
+use poly::{MultiLinearPolynomial as MLP, PolyEvaluation};
 use prover::Prover;
-// is tn alive
-// Checking if tn is working
+use verifier::{Status, Verifier};
 
 fn main() {
-    let g_0: MultiLinearPolynomial = SparsePolynomial::from_coefficients_vec(
+    let g_0: MLP = MLP::from_coefficients_vec(
         3,
         vec![
             (2u32.into(), SparseTerm::new(vec![(0, 3)])),
@@ -28,8 +19,12 @@ fn main() {
     let g0_sum = g_0.slow_sum_poly();
     let mut prover = Prover::new(&g_0.clone());
     let s1 = prover.first_round();
-    let expected_c = s1.evaluate(&0u32.into()) + s1.evaluate(&1u32.into());
-    println!("expected_c: {:?}", expected_c);
-    println!("g0_sum: {:?}", g0_sum);
-    assert_eq!(expected_c, g0_sum);
+    let mut verifier = Verifier::new(g_0.clone(), &s1, g0_sum);
+    let mut status = Status::Verifying;
+    while status == Status::Verifying {
+        let r = verifier.gen_r();
+        let gi = prover.gen_uni_polynomial(r);
+        status = verifier.execute_round(&gi);
+    }
+    assert_eq!(status, Status::Verified);
 }
