@@ -43,33 +43,29 @@ mod tests {
     #[case(&G_0, &G_0_SUM1)]
     #[case(&G_1, &G_1_SUM1)]
     fn test_first_round(#[case] p: &MLP, #[case] c1: &ScalarField) {
-        let p = p.clone();
         let mut prover = Prover::new(&p.clone());
         let s1 = prover.first_round();
-        let _ = Verifier::new(p.clone(), &s1, *c1);
+        let _ = Verifier::new(p, &s1, *c1);
     }
     #[rstest]
     #[case(&G_0, &G_0_SUM1)]
     #[case(&G_1, &G_1_SUM1)]
     #[should_panic]
     fn should_fail_first_round(#[case] p: &MLP, #[case] c1: &ScalarField) {
-        let p = p.clone();
         let mut prover = Prover::new(&p.clone());
         let mut rand = thread_rng();
         let r: ScalarField = rand.gen();
         let _ = prover.first_round();
         let s2 = prover.gen_round_polynomial(r);
-        let _ = Verifier::new(p.clone(), &s2, *c1);
+        let _ = Verifier::new(p, &s2, *c1);
     }
     #[rstest]
     #[case(&G_0, &G_0_SUM1)]
     #[case(&G_1, &G_1_SUM1)]
     fn test_second_round(#[case] p: &MLP, #[case] c1: &ScalarField) {
-        let p = p.clone();
         let mut prover = Prover::new(&p.clone());
         let s1 = prover.first_round();
-        // let s1 = prover.gen_uni_polynomial();
-        let mut verifier = Verifier::new(p.clone(), &s1, *c1);
+        let mut verifier = Verifier::new(p, &s1, *c1);
         let r = verifier.gen_r();
         let gi = prover.gen_round_polynomial(r);
         let status = verifier.execute_round(&gi);
@@ -80,10 +76,9 @@ mod tests {
     #[case(&G_0, &G_0_SUM1)]
     #[case(&G_1, &G_1_SUM1)]
     fn test_protocol(#[case] p: &MLP, #[case] c1: &ScalarField) {
-        let p = p.clone();
         let mut prover = Prover::new(&p.clone());
         let s1 = prover.first_round();
-        let mut verifier = Verifier::new(p.clone(), &s1, *c1);
+        let mut verifier = Verifier::new(p, &s1, *c1);
         let mut status = Status::Verifying;
         while status == Status::Verifying {
             let r = verifier.gen_r();

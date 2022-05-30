@@ -19,7 +19,7 @@ fn main() {
     let g0_sum = g_0.slow_sum_poly();
     let mut prover = Prover::new(&g_0.clone());
     let s1 = prover.first_round();
-    let mut verifier = Verifier::new(g_0.clone(), &s1, g0_sum);
+    let mut verifier = Verifier::new(&g_0, &s1, g0_sum);
     let mut status = Status::Verifying;
     while status == Status::Verifying {
         let r = verifier.gen_r();
