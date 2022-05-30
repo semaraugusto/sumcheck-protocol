@@ -1,6 +1,5 @@
-use crate::poly::MultiLinearPolynomial as MLP;
+use crate::poly::{MultiLinearPolynomial as MLP, UniPoly};
 use ark_bls12_381::Fr as ScalarField;
-use ark_poly::polynomial::univariate::DensePolynomial as UPoly;
 use ark_poly::Polynomial;
 use ark_poly::UVPolynomial;
 use ark_std::{One, Zero};
@@ -22,10 +21,11 @@ pub enum Status {
 }
 
 impl Verifier {
-    pub fn new(poly: MLP, s1: &UPoly<ScalarField>, h: ScalarField) -> Self {
+    pub fn new(poly: MLP, s1: &UniPoly, claimed_eval: ScalarField) -> Self {
         let rand = thread_rng();
-        // let poly = UPoly::from_coefficients_slice(s1);
-        assert!(h == s1.evaluate(&ScalarField::one()) + s1.evaluate(&ScalarField::zero()));
+        // let poly = UniPoly::from_coefficients_slice(s1);
+        let expected = s1.evaluate(&ScalarField::one()) + s1.evaluate(&ScalarField::zero());
+        assert_eq!(claimed_eval, expected);
         Self {
             rand,
             rnd_poly: vec![s1.to_vec()],
@@ -46,14 +46,23 @@ impl Verifier {
         // Determine if this is the last round
         if round == self.poly.num_vars - 1 {
             let r = self.gen_r();
-            let poly = UPoly::from_coefficients_slice(s);
-            assert!(poly.evaluate(&r) == self.poly.evaluate(&self.r_vec));
+            let poly = UniPoly::from_coefficients_slice(s);
+            let expected = poly.evaluate(&r);
+
+            let full_eval = self.poly.evaluate(&self.r_vec);
+
+            assert_eq!(full_eval, expected);
+
             Status::Verified
         } else {
             let r_prev = self.r_vec.last().unwrap();
-            let h = UPoly::from_coefficients_slice(&s_prev).evaluate(r_prev);
-            let poly = UPoly::from_coefficients_slice(s);
-            assert!(h == poly.evaluate(&ScalarField::one()) + poly.evaluate(&ScalarField::zero()));
+            let eval = UniPoly::from_coefficients_slice(&s_prev).evaluate(r_prev);
+            let poly = UniPoly::from_coefficients_slice(s);
+
+            let expected = poly.evaluate(&ScalarField::one()) + poly.evaluate(&ScalarField::zero());
+
+            assert_eq!(eval, expected);
+
             Status::Verifying
         }
     }

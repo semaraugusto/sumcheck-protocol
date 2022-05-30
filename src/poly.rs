@@ -12,7 +12,7 @@ pub type UniPoly = UPoly<ScalarField>;
 
 pub trait PolyEvaluation {
     fn slow_sum_poly(&self) -> ScalarField;
-    fn partial_eval(&self, vals: &[Option<ScalarField>]) -> UPoly<ScalarField>;
+    fn partial_eval(&self, vals: &[Option<ScalarField>]) -> UniPoly;
     fn gen_uni_polynomial(&self, inputs: &[Option<ScalarField>]) -> UniPoly;
 }
 
@@ -24,7 +24,7 @@ impl PolyEvaluation for MultiLinearPolynomial {
             .map(|x| self.evaluate(&x))
             .fold(ScalarField::zero(), |acc, i| acc + i)
     }
-    fn partial_eval(&self, vals: &[Option<ScalarField>]) -> UPoly<ScalarField> {
+    fn partial_eval(&self, vals: &[Option<ScalarField>]) -> UniPoly {
         self.terms
             .iter()
             .map(|(coef, term)| {
@@ -36,12 +36,12 @@ impl PolyEvaluation for MultiLinearPolynomial {
                 });
                 let mut vec = vec![ScalarField::zero(); degree + 1];
                 vec[degree] = coef;
-                UPoly::from_coefficients_slice(&vec)
+                UniPoly::from_coefficients_slice(&vec)
             })
-            .fold(UPoly::zero(), |acc, poly| acc + poly)
+            .fold(UniPoly::zero(), |acc, poly| acc + poly)
     }
 
-    fn gen_uni_polynomial(&self, inputs: &[Option<ScalarField>]) -> UPoly<ScalarField> {
+    fn gen_uni_polynomial(&self, inputs: &[Option<ScalarField>]) -> UniPoly {
         (0..self.num_vars - inputs.len())
             .map(|_| [ScalarField::zero(), ScalarField::one()])
             .multi_cartesian_product()
