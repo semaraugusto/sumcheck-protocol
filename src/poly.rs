@@ -21,24 +21,6 @@ pub fn n_to_vec(i: usize, n: usize) -> Vec<ScalarField> {
 pub trait SumEvaluation {
     fn slow_sum_poly(&self) -> ScalarField;
     fn slow_sum_g(&self) -> ScalarField;
-    // fn evaluate_gj(&self, points: Vec<ScalarField>) -> UniPoly;
-    // fn evaluate_gj_new(&self, points: Vec<ScalarField>) -> UniPoly;
-    // fn partial_eval(&mut self, vals: Option<&[ScalarField]>) -> UniPoly;
-    // fn gen_uni_polynomial_new(&mut self) -> UniPoly;
-    // fn gen_uni_polynomial_new(&mut self, inputs: &[Option<ScalarField>]) -> UniPoly;
-    // fn gen_uni_polynomial(&mut self) -> UniPoly;
-    // fn evaluate_term(
-    //     &self,
-    //     term: &SparseTerm,
-    //     point: &Vec<ScalarField>,
-    //     r_vec: Vec<ScalarField>,
-    // ) -> (ScalarField, Option<SparseTerm>);
-    // fn evaluate_term_new(
-    //     &self,
-    //     term: &SparseTerm,
-    //     point: &Vec<ScalarField>,
-    //     r_vec: Vec<ScalarField>,
-    // ) -> (ScalarField, Option<SparseTerm>);
 }
 
 impl SumEvaluation for MultiLinearPolynomial {

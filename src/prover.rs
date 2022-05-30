@@ -4,6 +4,7 @@ use ark_ff::Field;
 use ark_poly::polynomial::multivariate::{SparsePolynomial as MPoly, SparseTerm};
 use ark_poly::polynomial::univariate::DensePolynomial as UPoly;
 // use ark_poly::Polynomial;
+use crate::poly::{MultiLinearPolynomial as MLP, SumEvaluation};
 use ark_poly::UVPolynomial;
 use ark_std::{One, Zero};
 use itertools::Itertools;
@@ -15,8 +16,11 @@ pub struct Prover {
 }
 
 impl Prover {
-    pub fn new(g: MPoly<ScalarField, SparseTerm>) -> Self {
-        Self { g, r_vec: vec![] }
+    pub fn new(g: &MLP) -> Self {
+        Self {
+            g: g.clone(),
+            r_vec: vec![],
+        }
     }
     pub fn first_round(&mut self) -> UPoly<ScalarField> {
         // self.r_vec.push();
@@ -25,20 +29,18 @@ impl Prover {
 
     pub fn gen_uni_polynomial(&mut self, r: ScalarField) -> UPoly<ScalarField> {
         self.r_vec.push(r);
-        let mut inputs: Vec<Option<ScalarField>> = self.r_vec.iter().map(|x| Some(*x)).collect();
+        let mut inputs: Vec<Option<ScalarField>> = self.r_vec.iter().map(|&x| Some(x)).collect();
         inputs.push(None);
-        gen_uni_polynomial(&self.g, &inputs)
+        if inputs.len() == self.g.num_vars {
+            partial_eval(&self.g, &inputs)
+        } else {
+            gen_uni_polynomial(&self.g, &inputs)
+        }
     }
-
-    pub fn compute_round(&mut self, r: ScalarField) -> UPoly<ScalarField> {
-        self.gen_uni_polynomial(r)
-    }
-
-    // pub fn compute_final_round(&mut self, r: ScalarField) {
-    //     self.oracle.full_eval(r);
-    // }
 }
-// Take variable values via Some(ScalarField) and solve return a Univariate Polynomial for the None variable
+
+// Taken from https://github.com/timgestson/thaler-study-group/blob/main/src/sumcheck/prover.rs
+// Take variable values via Some(Fr) and solve return a Univariate Polynomial for the None variable
 // i.e. [None, Some(2), Some(3)] will return a Poly in respect to x1 with x2 solved for 2 and x3 solved for 3
 fn partial_eval(
     g: &MPoly<ScalarField, SparseTerm>,
@@ -60,8 +62,7 @@ fn partial_eval(
         .fold(UPoly::zero(), |acc, poly| acc + poly)
 }
 
-// Take variables and use 0,1 combination for the vars not provided
-pub fn gen_uni_polynomial(
+fn gen_uni_polynomial(
     g: &MPoly<ScalarField, SparseTerm>,
     inputs: &[Option<ScalarField>],
 ) -> UPoly<ScalarField> {
@@ -76,6 +77,7 @@ pub fn gen_uni_polynomial(
         })
         .fold(UPoly::zero(), |acc, vals| acc + partial_eval(g, &vals))
 }
+
 #[cfg(test)]
 mod tests {
     use lazy_static::lazy_static;
@@ -83,14 +85,15 @@ mod tests {
     use super::*;
     use crate::poly::{MultiLinearPolynomial, SumEvaluation};
     use ark_bls12_381::Fr as ScalarField;
-    use ark_poly::polynomial::multivariate::{SparsePolynomial, SparseTerm, Term};
+    use ark_poly::polynomial::multivariate::SparsePolynomial as MPoly;
+    use ark_poly::polynomial::multivariate::{SparseTerm, Term};
     use ark_poly::polynomial::MVPolynomial;
     use ark_poly::Polynomial;
     use rstest::rstest;
 
     lazy_static! {
         // g = 2(x_1)^3 + (x_1)(x_3) + (x_2)(x_3)
-        static ref G_0: MultiLinearPolynomial = SparsePolynomial::from_coefficients_vec(
+        static ref G_0: MultiLinearPolynomial = MPoly::from_coefficients_vec(
             3,
             vec![
                 (2u32.into(), SparseTerm::new(vec![(0, 3)])),
@@ -101,7 +104,7 @@ mod tests {
         static ref G_0_SUM1: ScalarField = G_0.slow_sum_poly();
         static ref G_0_SUM2: ScalarField = G_0.slow_sum_g();
         // Test with a larger g
-        static ref G_1: MultiLinearPolynomial = SparsePolynomial::from_coefficients_vec(
+        static ref G_1: MultiLinearPolynomial = MPoly::from_coefficients_vec(
             4,
             vec![
                 (2u32.into(), SparseTerm::new(vec![(0, 3)])),
@@ -124,7 +127,7 @@ mod tests {
     ) {
         assert_eq!(c1, c2);
         let p = p.clone();
-        let mut prover = Prover::new(p);
+        let mut prover = Prover::new(&p.clone());
         let s1 = prover.first_round();
         let expected_c = s1.evaluate(&0u32.into()) + s1.evaluate(&1u32.into());
         // println!("expected_c: {:?}", expected_c);

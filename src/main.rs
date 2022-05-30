@@ -15,6 +15,7 @@ use poly::{MultiLinearPolynomial, SumEvaluation};
 use prover::Prover;
 // is tn alive
 // Checking if tn is working
+
 fn main() {
     let g_0: MultiLinearPolynomial = SparsePolynomial::from_coefficients_vec(
         3,
@@ -25,7 +26,7 @@ fn main() {
         ],
     );
     let g0_sum = g_0.slow_sum_poly();
-    let mut prover = Prover::new(g_0);
+    let mut prover = Prover::new(&g_0.clone());
     let s1 = prover.first_round();
     let expected_c = s1.evaluate(&0u32.into()) + s1.evaluate(&1u32.into());
     println!("expected_c: {:?}", expected_c);
