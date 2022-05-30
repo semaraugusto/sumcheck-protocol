@@ -1,4 +1,3 @@
-pub mod oracle;
 pub mod poly;
 pub mod prover;
 pub mod verifier;
@@ -12,7 +11,6 @@ use ark_poly::MVPolynomial;
 use ark_poly::Polynomial;
 // use ark_poly::UVPolynomial;
 // use itertools::Itertools;
-use oracle::Oracle;
 use poly::{MultiLinearPolynomial, SumEvaluation};
 use prover::Prover;
 // is tn alive
@@ -27,8 +25,7 @@ fn main() {
         ],
     );
     let g0_sum = g_0.slow_sum_poly();
-    let oracle = Oracle::new(g_0);
-    let prover = Prover::new(oracle);
+    let mut prover = Prover::new(g_0);
     let s1 = prover.first_round();
     let expected_c = s1.evaluate(&0u32.into()) + s1.evaluate(&1u32.into());
     println!("expected_c: {:?}", expected_c);
